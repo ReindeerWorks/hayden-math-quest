@@ -34,7 +34,7 @@
 
   function pickSuccessMsg() {
     _roundsSinceName++;
-    var threshold = 2 + Math.floor(Math.random() * 2); // 2 or 3
+    var threshold = 2 + Math.floor(Math.random() * 2);
     if (_roundsSinceName >= threshold) {
       _roundsSinceName = 0;
       return SUCCESS_HAYDEN[Math.floor(Math.random() * SUCCESS_HAYDEN.length)];
@@ -49,7 +49,7 @@
   var _level        = 1;
   var _problemIndex = 0;
   var _problems     = [];
-  var _starsEarned  = 0;  // correct answers this session
+  var _starsEarned  = 0;
   var _answered     = false;
   var _audioCtx     = null;
 
@@ -77,43 +77,52 @@
       [523.25, 659.25, 783.99, 1046.5].forEach(function (freq, i) {
         var osc  = ctx.createOscillator();
         var gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.type = "sine";
-        osc.frequency.value = freq;
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = "sine"; osc.frequency.value = freq;
         var t0 = ctx.currentTime + i * 0.1;
         gain.gain.setValueAtTime(0, t0);
         gain.gain.linearRampToValueAtTime(0.28, t0 + 0.02);
         gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.45);
-        osc.start(t0);
-        osc.stop(t0 + 0.5);
+        osc.start(t0); osc.stop(t0 + 0.5);
       });
     } catch (e) {}
   }
 
   function playWrongBuzz() {
     try {
-      var ctx  = getAudioCtx();
-      var osc  = ctx.createOscillator();
+      var ctx = getAudioCtx();
+      var osc = ctx.createOscillator();
       var gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = "sawtooth";
-      osc.frequency.value = 180;
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = "sawtooth"; osc.frequency.value = 180;
       gain.gain.setValueAtTime(0.15, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.3);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.3);
     } catch (e) {}
   }
 
   function speak(text) {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
-    var utt   = new SpeechSynthesisUtterance(text);
-    utt.rate  = 0.85;
-    utt.pitch = 1.1;
+    var utt = new SpeechSynthesisUtterance(text);
+    utt.rate = 0.85; utt.pitch = 1.1;
     window.speechSynthesis.speak(utt);
+  }
+
+  // Speak a number twice with an 800ms pause between, chained via onend
+  function speakNumberTwice(n) {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    var utt1 = new SpeechSynthesisUtterance(String(n));
+    utt1.rate = 0.85; utt1.pitch = 1.1;
+    utt1.onend = function () {
+      setTimeout(function () {
+        var utt2 = new SpeechSynthesisUtterance(String(n));
+        utt2.rate = 0.85; utt2.pitch = 1.1;
+        window.speechSynthesis.speak(utt2);
+      }, 800);
+    };
+    window.speechSynthesis.speak(utt1);
   }
 
   // ── localStorage helpers ──
@@ -142,7 +151,6 @@
     return CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)];
   }
 
-  // Generate 3 choices: correct + 2 unique wrong answers near the correct value
   function generateChoices(correct, min, max) {
     var pool = [];
     for (var d = 1; d <= 4; d++) {
@@ -162,18 +170,17 @@
     var p   = { character: chr };
 
     if (level === 1) {
-      // Number recognition
-      var n = 1 + Math.floor(Math.random() * 10);
+      // Audio number recognition — number is NOT shown, only heard
+      var n  = 1 + Math.floor(Math.random() * 10);
       p.type     = 1;
       p.number   = n;
       p.answer   = n;
-      p.prompt   = "What number is this?";
+      p.prompt   = "Which number did you hear?";
       p.equation = null;
       p.choices  = generateChoices(n, 1, 10);
 
     } else if (level === 2) {
-      // Counting
-      var n = 1 + Math.floor(Math.random() * 10);
+      var n  = 1 + Math.floor(Math.random() * 10);
       p.type     = 2;
       p.count    = n;
       p.answer   = n;
@@ -182,25 +189,21 @@
       p.choices  = generateChoices(n, 1, 10);
 
     } else if (level === 3) {
-      // Addition: a + b ≤ 10, both ≥ 1
       var a    = 1 + Math.floor(Math.random() * 9);
       var maxB = Math.max(1, 10 - a);
       var b    = 1 + Math.floor(Math.random() * maxB);
       p.type     = 3;
-      p.a        = a;
-      p.b        = b;
+      p.a        = a; p.b = b;
       p.answer   = a + b;
       p.prompt   = "How many " + chr.name + "s does the hunter have?";
       p.equation = a + " + " + b + " = ?";
       p.choices  = generateChoices(a + b, 1, 10);
 
     } else if (level === 4) {
-      // Subtraction: a ≥ 2, b ≥ 1, a - b ≥ 1
-      var a = 2 + Math.floor(Math.random() * 9); // 2–10
-      var b = 1 + Math.floor(Math.random() * (a - 1)); // 1 to a-1
+      var a = 2 + Math.floor(Math.random() * 9);
+      var b = 1 + Math.floor(Math.random() * (a - 1));
       p.type     = 4;
-      p.a        = a;
-      p.b        = b;
+      p.a        = a; p.b = b;
       p.answer   = a - b;
       p.prompt   = "How many " + chr.name + "s are left?";
       p.equation = a + " \u2212 " + b + " = ?";
@@ -220,47 +223,17 @@
   // DOM builders
   // ═══════════════════════════════════════════════════════════════════════════
 
-  // Prize slot: tries GIF → PNG hunter → purple placeholder
-  function buildPrizeSlot(level) {
-    var wrap = document.createElement("div");
-    wrap.className = "prize-slot";
-
-    var gif = document.createElement("img");
-    gif.className = "prize-img";
-    gif.alt       = "Prize";
-    gif.src       = "assets/prizes/prize_level" + level + ".gif";
-
-    gif.addEventListener("error", function () {
-      var png = document.createElement("img");
-      png.className = "prize-img";
-      png.alt       = "Hunter";
-      png.src       = "assets/hunters/hunter" + level + ".png";
-      png.addEventListener("error", function () {
-        var ph = document.createElement("div");
-        ph.className   = "prize-placeholder";
-        ph.textContent = LEVEL_META[level].icon;
-        wrap.replaceChild(ph, png);
-      });
-      wrap.replaceChild(png, gif);
-    });
-
-    wrap.appendChild(gif);
-    return wrap;
-  }
-
-  // Character image cell (with optional red-X overlay for subtraction)
+  // Character image cell (optional red-X overlay for subtraction)
   function buildCharCell(charObj, crossed) {
     var cell = document.createElement("div");
     cell.className = "char-cell";
 
     var img = document.createElement("img");
-    img.src    = charObj.image;
-    img.alt    = charObj.name;
-    img.width  = 48;
-    img.height = 48;
+    img.src = charObj.image; img.alt = charObj.name;
+    img.width = 72; img.height = 72;
     img.addEventListener("error", function () {
       var ph = document.createElement("div");
-      ph.className   = "char-placeholder";
+      ph.className = "char-placeholder";
       ph.textContent = charObj.name.charAt(0);
       cell.replaceChild(ph, img);
     });
@@ -268,16 +241,13 @@
 
     if (crossed) {
       var x = document.createElement("div");
-      x.className   = "cross-x";
-      x.textContent = "✕";
+      x.className = "cross-x"; x.textContent = "✕";
       x.setAttribute("aria-hidden", "true");
       cell.appendChild(x);
     }
-
     return cell;
   }
 
-  // Row of N character images, last `crossCount` crossed out
   function buildCharRow(count, charObj, crossCount) {
     var row = document.createElement("div");
     row.className = "char-row";
@@ -287,16 +257,22 @@
     return row;
   }
 
-  // Objects area varies by level/type
   function buildObjectsArea(p) {
     var area = document.createElement("div");
     area.className = "objects-area";
 
     if (p.type === 1) {
-      var big = document.createElement("div");
-      big.className   = "big-number";
-      big.textContent = p.number;
-      area.appendChild(big);
+      // Level 1: audio only — show listen icon and "hear again" button
+      var listenIcon = document.createElement("div");
+      listenIcon.className = "listen-icon";
+      listenIcon.textContent = "👂";
+      area.appendChild(listenIcon);
+
+      var hearBtn = document.createElement("button");
+      hearBtn.className = "hear-again-btn";
+      hearBtn.innerHTML = "🔊 Hear it again";
+      hearBtn.addEventListener("click", function () { speakNumberTwice(p.number); });
+      area.appendChild(hearBtn);
 
     } else if (p.type === 2) {
       area.appendChild(buildCharRow(p.count, p.character, 0));
@@ -310,8 +286,7 @@
       grpA.appendChild(buildCharRow(p.a, p.character, 0));
 
       var plus = document.createElement("div");
-      plus.className   = "big-operator";
-      plus.textContent = "+";
+      plus.className = "big-operator"; plus.textContent = "+";
 
       var grpB = document.createElement("div");
       grpB.className = "add-group";
@@ -329,13 +304,12 @@
     return area;
   }
 
-  // Stars progress row (10 pips, filled up to `earned`)
   function buildStarsRow(earned) {
     var row = document.getElementById("stars-row");
     row.innerHTML = "";
     for (var i = 0; i < PROBLEMS_PER_LEVEL; i++) {
       var pip = document.createElement("span");
-      pip.className   = "star-pip" + (i < earned ? " lit" : "");
+      pip.className = "star-pip" + (i < earned ? " lit" : "");
       pip.textContent = "⭐";
       pip.setAttribute("aria-hidden", "true");
       row.appendChild(pip);
@@ -343,13 +317,54 @@
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // Prize popup — shown on every correct answer, auto-dismisses after 2.5s
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function showPrizePopup(msg, onDone) {
+    var overlay = document.createElement("div");
+    overlay.id = "prize-popup";
+
+    // Attempt to load prize GIF; fall back to confetti
+    var img = document.createElement("img");
+    img.className = "prize-popup-img";
+    img.alt = "Prize!";
+    img.src = "assets/prizes/prize_level" + _level + ".gif";
+
+    img.addEventListener("error", function () {
+      img.remove();
+      // Confetti as fallback
+      var cc = document.createElement("div");
+      cc.className = "prize-popup-confetti";
+      launchConfetti(cc);
+      overlay.insertBefore(cc, overlay.firstChild);
+    });
+
+    overlay.appendChild(img);
+
+    var msgDiv = document.createElement("div");
+    msgDiv.className = "prize-popup-msg";
+    msgDiv.textContent = msg;
+    overlay.appendChild(msgDiv);
+
+    document.body.appendChild(overlay);
+
+    // Auto-dismiss
+    setTimeout(function () {
+      overlay.style.transition = "opacity .3s";
+      overlay.style.opacity    = "0";
+      setTimeout(function () {
+        overlay.remove();
+        onDone();
+      }, 300);
+    }, 2500);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // Level Select
   // ═══════════════════════════════════════════════════════════════════════════
 
   function mountLevelSelect() {
-    // Hide stars row during level select
     document.getElementById("stars-row").innerHTML = "";
-
     var app = document.getElementById("app");
     app.innerHTML = "";
 
@@ -367,19 +382,14 @@
     var unlocked = getUnlocked();
 
     [1, 2, 3, 4].forEach(function (lvl) {
-      var meta  = LEVEL_META[lvl];
-      var best  = getBestStars(lvl);
+      var meta     = LEVEL_META[lvl];
+      var best     = getBestStars(lvl);
       var isLocked = lvl > unlocked;
 
       var btn = document.createElement("button");
       btn.className = "level-btn" + (isLocked ? " locked" : "");
       btn.disabled  = isLocked;
       btn.setAttribute("aria-label", meta.name + (isLocked ? " — locked" : ""));
-
-      var starsHtml = "";
-      for (var s = 0; s < PROBLEMS_PER_LEVEL; s++) {
-        starsHtml += '<span class="ls-star' + (s < best ? " lit" : "") + '">⭐</span>';
-      }
 
       btn.innerHTML =
         '<span class="level-icon">' + (isLocked ? "🔒" : meta.icon) + '</span>' +
@@ -392,7 +402,6 @@
       if (!isLocked) {
         btn.addEventListener("click", function () { startLevel(lvl); });
       }
-
       screen.appendChild(btn);
     });
 
@@ -422,16 +431,12 @@
     var card = document.createElement("div");
     card.id = "problem-card";
 
-    // ── 1. Prize slot ──
-    card.appendChild(buildPrizeSlot(_level));
-
-    // ── 2. Game header inside card (back + progress) ──
+    // ── Card header (back + progress) ──
     var cardHeader = document.createElement("div");
     cardHeader.className = "card-header";
 
     var backBtn = document.createElement("button");
-    backBtn.className   = "back-btn";
-    backBtn.textContent = "← Levels";
+    backBtn.className = "back-btn"; backBtn.textContent = "← Levels";
     backBtn.addEventListener("click", mountLevelSelect);
     cardHeader.appendChild(backBtn);
 
@@ -439,19 +444,18 @@
     progress.className   = "progress-label";
     progress.textContent = "Problem " + (_problemIndex + 1) + " of " + PROBLEMS_PER_LEVEL;
     cardHeader.appendChild(progress);
-
     card.appendChild(cardHeader);
 
-    // ── 3. Prompt ──
+    // ── Prompt ──
     var prompt = document.createElement("div");
     prompt.className   = "prompt-text";
     prompt.textContent = p.prompt;
     card.appendChild(prompt);
 
-    // ── 4. Objects area ──
+    // ── Objects area ──
     card.appendChild(buildObjectsArea(p));
 
-    // ── 5. Equation ──
+    // ── Equation ──
     if (p.equation) {
       var eq = document.createElement("div");
       eq.className   = "equation-text";
@@ -459,68 +463,86 @@
       card.appendChild(eq);
     }
 
-    // ── 6. Divider ──
+    // ── Divider ──
     var hr = document.createElement("hr");
     hr.className = "divider";
     card.appendChild(hr);
 
-    // ── 7. Tap label ──
+    // ── Tap label ──
     var tapLabel = document.createElement("div");
     tapLabel.className   = "tap-label";
     tapLabel.textContent = "tap the right answer";
     card.appendChild(tapLabel);
 
-    // ── 8. Answer buttons ──
+    // ── Answer buttons ──
     var answersRow = document.createElement("div");
     answersRow.className = "answers-row";
-
     p.choices.forEach(function (choice) {
       var btn = document.createElement("button");
       btn.className   = "answer-btn";
       btn.textContent = choice;
       btn.addEventListener("click", function () {
-        handleAnswer(choice, p.answer, btn, answersRow);
+        handleAnswer(choice, p, btn, answersRow);
       });
       answersRow.appendChild(btn);
     });
-
     card.appendChild(answersRow);
+
     app.appendChild(card);
+
+    // ── Level 1: auto-speak number on load ──
+    if (p.type === 1) {
+      setTimeout(function () { speakNumberTwice(p.number); }, 400);
+    }
   }
 
-  function handleAnswer(chosen, correct, btn, answersRow) {
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Answer handling
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function handleAnswer(chosen, p, btn, answersRow) {
     if (_answered) return;
     _answered = true;
 
-    // Lock all buttons
     var allBtns = answersRow.querySelectorAll(".answer-btn");
     allBtns.forEach(function (b) { b.disabled = true; });
 
-    if (chosen === correct) {
+    if (chosen === p.answer) {
       btn.classList.add("correct");
       playChime();
-      speak(pickSuccessMsg());
+
+      // Level 1 gets a special spoken confirmation with the number revealed
+      var msg = (p.type === 1)
+        ? "That's right, it was " + p.number + "! Great job Hayden!"
+        : pickSuccessMsg();
+
+      speak(msg);
       _starsEarned++;
       buildStarsRow(_starsEarned);
 
-      setTimeout(function () {
+      showPrizePopup(msg, function () {
         _problemIndex++;
         if (_problemIndex >= PROBLEMS_PER_LEVEL) {
           finishLevel();
         } else {
           renderProblem();
         }
-      }, 1500);
+      });
 
     } else {
       btn.classList.add("wrong");
       playWrongBuzz();
-      speak("Try again!");
+
+      if (p.type === 1) {
+        // Level 1 wrong: speak prompt then replay number
+        speak("Try again, listen carefully!");
+        setTimeout(function () { speakNumberTwice(p.number); }, 1400);
+      } else {
+        speak("Try again!");
+      }
 
       setTimeout(function () {
         btn.classList.remove("wrong");
-        btn.disabled = false;
-        // Re-enable all buttons and allow another attempt
         allBtns.forEach(function (b) { b.disabled = false; });
         _answered = false;
       }, 900);
@@ -533,36 +555,31 @@
 
   function finishLevel() {
     setBestStars(_level, _starsEarned);
-    // Unlock next level
     if (_level < 4) setUnlocked(_level + 1);
 
     var app = document.getElementById("app");
     app.innerHTML = "";
 
-    // Win overlay
     var overlay = document.createElement("div");
     overlay.id = "win-screen";
 
-    // Confetti
     var confetti = document.createElement("div");
     confetti.id = "confetti-container";
     launchConfetti(confetti);
     overlay.appendChild(confetti);
 
-    // Win box
     var box = document.createElement("div");
     box.id = "win-box";
 
-    // Prize media
     var prizeWrap = document.createElement("div");
     prizeWrap.className = "win-prize";
     var prizeGif = document.createElement("img");
     prizeGif.className = "win-prize-img";
-    prizeGif.src       = "assets/prizes/prize_level" + _level + ".gif";
-    prizeGif.alt       = "Prize!";
+    prizeGif.src = "assets/prizes/prize_level" + _level + ".gif";
+    prizeGif.alt = "Prize!";
     prizeGif.addEventListener("error", function () {
       var ph = document.createElement("div");
-      ph.className   = "win-prize-placeholder";
+      ph.className = "win-prize-placeholder";
       ph.textContent = LEVEL_META[_level].icon;
       prizeWrap.replaceChild(ph, prizeGif);
     });
@@ -570,13 +587,12 @@
     box.appendChild(prizeWrap);
 
     var emoji = document.createElement("div");
-    emoji.className   = "win-emoji";
-    emoji.textContent = "🎉";
+    emoji.className = "win-emoji"; emoji.textContent = "🎉";
     box.appendChild(emoji);
 
     var msg = document.createElement("div");
-    msg.className   = "win-msg";
-    msg.innerHTML   = "You did it Hayden!<br>You're a demon hunter hero!";
+    msg.className = "win-msg";
+    msg.innerHTML = "You did it Hayden!<br>You're a demon hunter hero!";
     box.appendChild(msg);
 
     var starsLine = document.createElement("div");
@@ -588,22 +604,19 @@
     btns.className = "win-btns";
 
     var againBtn = document.createElement("button");
-    againBtn.className   = "win-btn";
-    againBtn.textContent = "Play Again";
+    againBtn.className = "win-btn"; againBtn.textContent = "Play Again";
     againBtn.addEventListener("click", function () { startLevel(_level); });
     btns.appendChild(againBtn);
 
     if (_level < 4) {
       var nextBtn = document.createElement("button");
-      nextBtn.className   = "win-btn win-btn-next";
-      nextBtn.textContent = "Next Level →";
+      nextBtn.className = "win-btn win-btn-next"; nextBtn.textContent = "Next Level →";
       nextBtn.addEventListener("click", function () { startLevel(_level + 1); });
       btns.appendChild(nextBtn);
     }
 
     var levelsBtn = document.createElement("button");
-    levelsBtn.className   = "win-btn win-btn-secondary";
-    levelsBtn.textContent = "All Levels";
+    levelsBtn.className = "win-btn win-btn-secondary"; levelsBtn.textContent = "All Levels";
     levelsBtn.addEventListener("click", mountLevelSelect);
     btns.appendChild(levelsBtn);
 
@@ -624,7 +637,7 @@
       var piece = document.createElement("div");
       piece.className = "confetti-piece";
       var size = (8 + Math.random() * 10) + "px";
-      piece.style.left              = (Math.random() * 100) + "vw";
+      piece.style.left              = (Math.random() * 100) + "%";
       piece.style.width             = size;
       piece.style.height            = size;
       piece.style.background        = colors[Math.floor(Math.random() * colors.length)];

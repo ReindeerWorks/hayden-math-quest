@@ -171,7 +171,7 @@ html, body {
   background: var(--white);
   border: 3px solid var(--purple-mid);
   border-radius: var(--radius);
-  padding: 0 0 20px;
+  padding: 16px 0 20px;
   box-shadow: var(--shadow);
   overflow: hidden;
   display: flex;
@@ -180,28 +180,48 @@ html, body {
   gap: 14px;
 }
 
-/* ── Prize slot ── */
-.prize-slot {
-  width: 100%;
-  height: 120px;
-  background: var(--purple-light);
+/* ── Prize popup (correct answer overlay) ── */
+#prize-popup {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.75);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-bottom: 3px solid var(--purple-mid);
+  gap: 20px;
+  z-index: 300;
+  animation: popupIn .2s ease;
   overflow: hidden;
 }
 
-.prize-img {
-  max-height: 114px;
-  max-width: 100%;
-  object-fit: contain;
-  border-radius: 0;
+@keyframes popupIn {
+  from { opacity: 0; transform: scale(.92); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
-.prize-placeholder {
-  font-size: 4rem;
-  line-height: 1;
+.prize-popup-img {
+  max-width: 80vw;
+  max-height: 50vh;
+  object-fit: contain;
+  border-radius: var(--radius);
+}
+
+.prize-popup-msg {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: var(--white);
+  text-align: center;
+  padding: 0 24px;
+  text-shadow: 0 2px 8px rgba(0,0,0,.4);
+  animation: bounce .5s ease infinite alternate;
+}
+
+.prize-popup-confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
 }
 
 /* ── Card header (back btn + progress) ── */
@@ -247,52 +267,70 @@ html, body {
 /* ── Objects area ── */
 .objects-area {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
+  gap: 10px;
   padding: 0 12px;
-  min-height: 60px;
+  min-height: 80px;
 }
 
-/* Big number (Level 1) */
-.big-number {
-  font-size: 6rem;
-  font-weight: 900;
-  color: var(--purple);
+/* Level 1 — listen mode */
+.listen-icon {
+  font-size: 5rem;
   line-height: 1;
+  margin-bottom: 8px;
 }
+
+.hear-again-btn {
+  background: var(--purple-light);
+  border: 3px solid var(--purple-mid);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--purple-dark);
+  cursor: pointer;
+  padding: 10px 20px;
+  min-height: 48px;
+  box-shadow: var(--shadow);
+  transition: border-color .15s, transform .1s;
+}
+.hear-again-btn:hover { border-color: var(--purple); transform: translateY(-1px); }
+.hear-again-btn:active { transform: translateY(0); }
 
 /* Character image row */
 .char-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   justify-content: center;
-  max-width: 330px; /* 6 × 48px + 5 × 6px gap = 318px */
+  max-width: 472px; /* 6 × 72px + 5 × 8px gap = 472px */
 }
 
 .char-cell {
   position: relative;
-  width: 48px;
-  height: 48px;
+  width: 72px;
+  height: 72px;
   flex-shrink: 0;
 }
 
 .char-cell img {
-  width: 48px;
-  height: 48px;
+  width: 72px;
+  height: 72px;
   object-fit: contain;
   display: block;
 }
 
 .char-placeholder {
-  width: 48px;
-  height: 48px;
+  width: 72px;
+  height: 72px;
   background: var(--purple);
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
+  font-size: 2rem;
   font-weight: 900;
   color: var(--white);
 }
@@ -546,6 +584,8 @@ html, body {
   .equation-text { font-size: 28px; }
   .answer-btn { font-size: 26px; min-height: 68px; }
   .answers-row { gap: 8px; }
-  .prize-slot { height: 90px; }
   .win-prize-img { max-height: 120px; }
+  .char-cell, .char-cell img, .char-placeholder { width: 56px; height: 56px; }
+  .char-row { max-width: 368px; gap: 6px; } /* 6 × 56px + 5 × 6px */
+  .prize-popup-msg { font-size: 1.4rem; }
 }
