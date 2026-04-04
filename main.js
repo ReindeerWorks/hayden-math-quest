@@ -53,6 +53,37 @@
   var _answered     = false;
   var _audioCtx     = null;
 
+  // ── Prize pool (populated at boot by probing each manifest entry) ──
+  var _prizePool      = [];  // filenames confirmed to exist
+  var _lastPrizeName  = null;
+
+  function initPrizePool() {
+    if (!window.PRIZE_MANIFEST || !window.PRIZE_MANIFEST.length) return;
+    window.PRIZE_MANIFEST.forEach(function (filename) {
+      var probe = new Image();
+      probe.addEventListener("load", function () {
+        _prizePool.push(filename);
+      });
+      // on error: silently skip — file doesn't exist
+      probe.src = "assets/prizes/" + filename;
+    });
+  }
+
+  // Pick a random prize filename, never the same one twice in a row.
+  // Returns null if pool is empty.
+  function pickPrize() {
+    if (!_prizePool.length) return null;
+    if (_prizePool.length === 1) return _prizePool[0];
+    var name;
+    var tries = 0;
+    do {
+      name = _prizePool[Math.floor(Math.random() * _prizePool.length)];
+      tries++;
+    } while (name === _lastPrizeName && tries < 10);
+    _lastPrizeName = name;
+    return name;
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // Utilities
   // ═══════════════════════════════════════════════════════════════════════════
@@ -324,22 +355,31 @@
     var overlay = document.createElement("div");
     overlay.id = "prize-popup";
 
-    // Attempt to load prize GIF; fall back to confetti
-    var img = document.createElement("img");
-    img.className = "prize-popup-img";
-    img.alt = "Prize!";
-    img.src = "assets/prizes/prize_level" + _level + ".gif";
+    var prizeFile = pickPrize();
 
-    img.addEventListener("error", function () {
-      img.remove();
-      // Confetti as fallback
+    if (prizeFile) {
+      var img = document.createElement("img");
+      img.className = "prize-popup-img";
+      img.alt = "Prize!";
+      img.src = "assets/prizes/" + prizeFile;
+      img.addEventListener("error", function () {
+        // Remove bad entry from pool so we don't try it again
+        var idx = _prizePool.indexOf(prizeFile);
+        if (idx !== -1) _prizePool.splice(idx, 1);
+        img.remove();
+        var cc = document.createElement("div");
+        cc.className = "prize-popup-confetti";
+        launchConfetti(cc);
+        overlay.insertBefore(cc, overlay.firstChild);
+      });
+      overlay.appendChild(img);
+    } else {
+      // Pool empty — use confetti
       var cc = document.createElement("div");
       cc.className = "prize-popup-confetti";
       launchConfetti(cc);
-      overlay.insertBefore(cc, overlay.firstChild);
-    });
-
-    overlay.appendChild(img);
+      overlay.appendChild(cc);
+    }
 
     var msgDiv = document.createElement("div");
     msgDiv.className = "prize-popup-msg";
@@ -573,17 +613,25 @@
 
     var prizeWrap = document.createElement("div");
     prizeWrap.className = "win-prize";
-    var prizeGif = document.createElement("img");
-    prizeGif.className = "win-prize-img";
-    prizeGif.src = "assets/prizes/prize_level" + _level + ".gif";
-    prizeGif.alt = "Prize!";
-    prizeGif.addEventListener("error", function () {
+    var winPrizeFile = pickPrize();
+    if (winPrizeFile) {
+      var prizeGif = document.createElement("img");
+      prizeGif.className = "win-prize-img";
+      prizeGif.src = "assets/prizes/" + winPrizeFile;
+      prizeGif.alt = "Prize!";
+      prizeGif.addEventListener("error", function () {
+        var ph = document.createElement("div");
+        ph.className = "win-prize-placeholder";
+        ph.textContent = LEVEL_META[_level].icon;
+        prizeWrap.replaceChild(ph, prizeGif);
+      });
+      prizeWrap.appendChild(prizeGif);
+    } else {
       var ph = document.createElement("div");
       ph.className = "win-prize-placeholder";
       ph.textContent = LEVEL_META[_level].icon;
-      prizeWrap.replaceChild(ph, prizeGif);
-    });
-    prizeWrap.appendChild(prizeGif);
+      prizeWrap.appendChild(ph);
+    }
     box.appendChild(prizeWrap);
 
     var emoji = document.createElement("div");
@@ -652,6 +700,7 @@
   // Boot
   // ═══════════════════════════════════════════════════════════════════════════
 
+  initPrizePool();
   mountLevelSelect();
 
 }());
