@@ -65,8 +65,14 @@
         _prizePool.push(filename);
       });
       // on error: silently skip — file doesn't exist
-      probe.src = "assets/prizes/" + filename;
+      probe.src = prizeSrc(filename);
     });
+  }
+
+  // Resolve a prize entry to an image src. Bare filenames live under
+  // assets/prizes/; absolute URLs (shared library GIFs) are used as-is.
+  function prizeSrc(name) {
+    return /^https?:/.test(name) ? name : "assets/prizes/" + name;
   }
 
   // Pick a random prize filename, never the same one twice in a row.
@@ -361,7 +367,7 @@
       var img = document.createElement("img");
       img.className = "prize-popup-img";
       img.alt = "Prize!";
-      img.src = "assets/prizes/" + prizeFile;
+      img.src = prizeSrc(prizeFile);
       img.addEventListener("error", function () {
         // Remove bad entry from pool so we don't try it again
         var idx = _prizePool.indexOf(prizeFile);
@@ -617,7 +623,7 @@
     if (winPrizeFile) {
       var prizeGif = document.createElement("img");
       prizeGif.className = "win-prize-img";
-      prizeGif.src = "assets/prizes/" + winPrizeFile;
+      prizeGif.src = prizeSrc(winPrizeFile);
       prizeGif.alt = "Prize!";
       prizeGif.addEventListener("error", function () {
         var ph = document.createElement("div");
