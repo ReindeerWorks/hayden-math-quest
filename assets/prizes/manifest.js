@@ -15,4 +15,10 @@ window.PRIZE_MANIFEST = [
   "prize8.gif",
   "prize9.gif",
   "prize10.gif",
+  "prize11.gif",
+  "prize12.gif",
+  "prize13.gif",
+  "prize14.gif",
+  "prize15.gif",
+  "prize16.gif",
 ];
