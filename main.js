@@ -139,27 +139,24 @@
   }
 
   function speak(text) {
-    if (!window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    var utt = new SpeechSynthesisUtterance(text);
-    utt.rate = 0.85; utt.pitch = 1.1;
-    window.speechSynthesis.speak(utt);
+    // Routed through the shared HaydenSpeak helper (waits for voices + first
+    // tap on Android). Guarded so a CDN hiccup never breaks the game.
+    if (window.HaydenSpeak) HaydenSpeak.say(text, { rate: 0.85, pitch: 1.1 });
   }
 
-  // Speak a number twice with an 800ms pause between, chained via onend
+  // Speak a number twice with an 800ms pause between, chained via onEnd
   function speakNumberTwice(n) {
-    if (!window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    var utt1 = new SpeechSynthesisUtterance(String(n));
-    utt1.rate = 0.85; utt1.pitch = 1.1;
-    utt1.onend = function () {
-      setTimeout(function () {
-        var utt2 = new SpeechSynthesisUtterance(String(n));
-        utt2.rate = 0.85; utt2.pitch = 1.1;
-        window.speechSynthesis.speak(utt2);
-      }, 800);
-    };
-    window.speechSynthesis.speak(utt1);
+    if (!window.HaydenSpeak) return;
+    var word = String(n);
+    HaydenSpeak.say(word, {
+      rate: 0.85,
+      pitch: 1.1,
+      onEnd: function () {
+        setTimeout(function () {
+          HaydenSpeak.say(word, { rate: 0.85, pitch: 1.1 });
+        }, 800);
+      }
+    });
   }
 
   // ── localStorage helpers ──
